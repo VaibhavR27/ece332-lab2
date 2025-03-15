@@ -83,3 +83,41 @@ void mirror_image(int* original_image_pointer, int image_width, int image_height
 	}
 }
 
+
+
+
+/*
+Method to take an input and convert it to black and white
+*/
+void color2blackAndWhite(short* image_pointer, int image_width, int image_height) {
+    int x, y;
+    for (y = 0; y < image_height; y++) {
+        for (x = 0; x < image_width; x++) {
+            int offset = (y << 9) + x;  // Assumes a row stride of 512
+            unsigned short pixel = image_pointer[offset];
+
+            // Extract the individual RGB components from the 16-bit RGB565 pixel
+            unsigned short red   = (pixel >> 11) & 0x1F; // 5 bits
+            unsigned short green = (pixel >> 5)  & 0x3F; // 6 bits
+            unsigned short blue  =  pixel        & 0x1F; // 5 bits
+
+            // Convert each component to an 8-bit value.
+            // This scales red and blue from [0,31] to [0,255] and green from [0,63] to [0,255].
+            unsigned int r8 = (red   * 255) / 31;
+            unsigned int g8 = (green * 255) / 63;
+            unsigned int b8 = (blue  * 255) / 31;
+
+            // Compute the luminance (brightness) using standard coefficients.
+            // The result is an approximate grayscale value in the range [0,255].
+            unsigned int luminance = (r8 * 299 + g8 * 587 + b8 * 114) / 1000;
+
+            // Use a threshold (128) to decide between black and white.
+            // If the luminance is less than 128, set the pixel to black (0x0000); otherwise, set it to white (0xFFFF).
+            if (luminance < 128)
+                image_pointer[offset] = 0x0000;  // Black
+            else
+                image_pointer[offset] = 0xFFFF;  // White
+        }
+    }
+}
+
