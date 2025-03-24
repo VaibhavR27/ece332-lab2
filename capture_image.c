@@ -49,7 +49,7 @@ int main(void){
 }
 
 
-/*
+/* --- Step 6c (flip) ---
 Method to take an input image and flip image
 TODO: currently flips image across both axes, check to see what flip is desired for final submission
 */
@@ -65,7 +65,7 @@ void flip_image(int* image_pointer, int image_width, int image_height){
 }
 
 
-/*
+/* --- Step 6c (mirror) ---
 Method to take an input image and mirror image
 TODO: currently doubles width of original image, mirrors across right edge of image
 */
@@ -86,7 +86,7 @@ void mirror_image(int* original_image_pointer, int image_width, int image_height
 
 
 
-/*
+/* --- Step 6d ---
 Method to convert a color image to grayscale.
 Instead of converting to a binary (black and white) image using a threshold,
 this version calculates the luminance of each pixel and maps it to a grayscale value.
@@ -123,6 +123,40 @@ void color2blackAndWhite(unsigned short* image_pointer, int image_width, int ima
             unsigned short grayPixel = (grayRed << 11) | (grayGreen << 5) | grayBlue;
 
             image_pointer[offset] = grayPixel;
+        }
+    }
+}
+
+
+
+
+/* --- Step 6e ---
+Method to invert a grayscale image by flipping the intensity of each pixel.
+Assumes the image is in grayscale in RGB565 format as produced by the modified
+color2blackAndWhite() function.
+*/
+void invert_black_and_white(unsigned short* image_pointer, int image_width, int image_height) {
+    int x, y;
+    for (y = 0; y < image_height; y++) {
+        for (x = 0; x < image_width; x++) {
+            int offset = (y << 9) + x;  // Assumes a row stride of 512 pixels
+            unsigned short pixel = image_pointer[offset];
+
+            // Extract the RGB components from the 16-bit RGB565 pixel.
+            unsigned short red   = (pixel >> 11) & 0x1F;  // 5 bits for red
+            unsigned short green = (pixel >> 5)  & 0x3F;  // 6 bits for green
+            unsigned short blue  = pixel & 0x1F;            // 5 bits for blue
+
+            // Invert each component relative to its maximum.
+            // For red and blue, the maximum value is 31; for green, it's 63.
+            unsigned short inv_red   = 31 - red;
+            unsigned short inv_green = 63 - green;
+            unsigned short inv_blue  = 31 - blue;
+
+            // Combine the inverted components back into a 16-bit RGB565 pixel.
+            unsigned short inv_pixel = (inv_red << 11) | (inv_green << 5) | inv_blue;
+
+            image_pointer[offset] = inv_pixel;
         }
     }
 }
