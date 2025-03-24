@@ -87,19 +87,23 @@ void mirror_image(int* original_image_pointer, int image_width, int image_height
 
 
 /*
-Method to take an input and convert it to black and white
+Method to convert a color image to grayscale.
+Instead of converting to a binary (black and white) image using a threshold,
+this version calculates the luminance of each pixel and maps it to a grayscale value.
+The grayscale value is computed in the RGB565 format, which gives a smooth variation
+of brightness levels.
 */
-void color2blackAndWhite(short* image_pointer, int image_width, int image_height) {
+void color2blackAndWhite(unsigned short* image_pointer, int image_width, int image_height) {
     int x, y;
     for (y = 0; y < image_height; y++) {
         for (x = 0; x < image_width; x++) {
-            int offset = (y << 9) + x;  // Assumes a row stride of 512
+            int offset = (y << 9) + x;  // Assumes a row stride of 512 pixels
             unsigned short pixel = image_pointer[offset];
 
-            // Extract the individual RGB components from the 16-bit RGB565 pixel
-            unsigned short red   = (pixel >> 11) & 0x1F; // 5 bits
-            unsigned short green = (pixel >> 5)  & 0x3F; // 6 bits
-            unsigned short blue  =  pixel        & 0x1F; // 5 bits
+            // Extract the individual RGB components from the 16-bit RGB565 pixel.
+            unsigned short red   = (pixel >> 11) & 0x1F;  // 5 bits for red
+            unsigned short green = (pixel >> 5)  & 0x3F;  // 6 bits for green
+            unsigned short blue  =  pixel        & 0x1F;  // 5 bits for blue
 
             // Convert each component to an 8-bit value.
             // This scales red and blue from [0,31] to [0,255] and green from [0,63] to [0,255].
@@ -108,16 +112,17 @@ void color2blackAndWhite(short* image_pointer, int image_width, int image_height
             unsigned int b8 = (blue  * 255) / 31;
 
             // Compute the luminance (brightness) using standard coefficients.
-            // The result is an approximate grayscale value in the range [0,255].
+            // The result is an 8-bit grayscale value in the range [0,255].
             unsigned int luminance = (r8 * 299 + g8 * 587 + b8 * 114) / 1000;
 
-            // Use a threshold (128) to decide between black and white.
-            // If the luminance is less than 128, set the pixel to black (0x0000); otherwise, set it to white (0xFFFF).
-            if (luminance < 128)
-                image_pointer[offset] = 0x0000;  // Black
-            else
-                image_pointer[offset] = 0xFFFF;  // White
+            // Map the 8-bit luminance value back to the RGB565 format.
+            // For red and blue, scale from [0,255] to [0,31]; for green, scale to [0,63].
+            unsigned short grayRed   = (luminance * 31) / 255;
+            unsigned short grayGreen = (luminance * 63) / 255;
+            unsigned short grayBlue  = (luminance * 31) / 255;
+            unsigned short grayPixel = (grayRed << 11) | (grayGreen << 5) | grayBlue;
+
+            image_pointer[offset] = grayPixel;
         }
     }
 }
-
